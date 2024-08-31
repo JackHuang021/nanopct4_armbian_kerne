@@ -9,7 +9,9 @@
  */
 
 /dts-v1/;
+#include <dt-bindings/usb/pd.h>
 #include "rk3399-nanopi4.dtsi"
+#include "rk3399-nanopc-t4-dsi.dtsi"
 
 / {
 	model = "FriendlyElec NanoPC-T4";
@@ -59,11 +61,17 @@
 		 * With 20KHz PWM and an EVERCOOL EC4007H12SA fan, these levels
 		 * work out to 0, ~1200, ~3000, and 5000RPM respectively.
 		 */
-		cooling-levels = <0 12 18 255>;
+		cooling-levels = <12 12 18 255>;
 		#cooling-cells = <2>;
 		fan-supply = <&vcc12v0_sys>;
 		pwms = <&pwm1 0 50000 0>;
 	};
+};
+
+&cdn_dp {
+	status = "okay";
+	extcon = <&fusb0>;
+	phys = <&tcphy0_dp>;
 };
 
 &cpu_thermal {
@@ -94,6 +102,50 @@
 	};
 };
 
+&fusb0 {
+
+	connector {
+		compatible = "usb-c-connector";
+		label = "USB-C";
+		power-role = "dual";
+		data-role = "dual";
+		try-power-role = "sink";
+		source-pdos = <PDO_FIXED(5000, 1200, PDO_FIXED_USB_COMM)>;
+		sink-pdos = <PDO_FIXED(5000, 500, PDO_FIXED_USB_COMM)>;
+		op-sink-microwatt = <5000000>;
+		
+		extcon-cables = <1 2 5 6 9 10 12 44>;
+		typec-altmodes = <0xff01 1 0x001c0000 1>;
+		
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			port@0 {
+				reg = <0>;
+				usb_con_hs: endpoint {
+					remote-endpoint = 
+						<&u2phy0_typec_hs>;
+				};
+			};
+			port@1 {
+				reg = <1>;
+
+				usb_con_ss: endpoint {
+					remote-endpoint = 
+						<&tcphy0_typec_ss>;
+				};
+			};
+			port@2 {
+				reg = <2>;
+				usb_con_dp: endpoint {
+					remote-endpoint = 
+						<&tcphy0_typec_dp>;
+				};
+			};
+		};
+	};		
+};
+
 &pcie0 {
 	ep-gpios = <&gpio2 RK_PA4 GPIO_ACTIVE_HIGH>;
 	num-lanes = <4>;
@@ -114,12 +166,57 @@
 	mmc-hs400-enhanced-strobe;
 };
 
+&tcphy0 {
+	extcon = <&fusb0>;
+	status = "okay";
+};
+
+&tcphy0_dp {
+	port {
+		tcphy0_typec_dp: endpoint {
+			remote-endpoint = <&usb_con_dp>;
+		};
+	};
+};
+
+&tcphy0_usb3 {
+	port {
+		tcphy0_typec_ss: endpoint {
+			remote-endpoint = <&usb_con_ss>;
+		};
+	};
+};
+
+&u2phy0 {
+	extcon = <&fusb0>;
+};
+
 &u2phy0_host {
 	phy-supply = <&vcc5v0_host0>;
+	status = "okay";
+};
+
+&u2phy0_otg {
+	status = "okay";
+
+	port {
+		u2phy0_typec_hs: endpoint {
+			remote-endpoint = <&usb_con_hs>;
+		};
+	};
 };
 
 &u2phy1_host {
 	phy-supply = <&vcc5v0_host0>;
+	status = "okay";
+};
+
+&u2phy1_otg {
+	status = "okay";
+};
+
+&usbdrd_dwc3_0 {
+	extcon = <&fusb0>;
 };
 
 &vcc5v0_sys {

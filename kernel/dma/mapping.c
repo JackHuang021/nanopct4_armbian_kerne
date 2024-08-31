@@ -649,7 +649,7 @@ struct sg_table *dma_alloc_noncontiguous(struct device *dev, size_t size,
 	const struct dma_map_ops *ops = get_dma_ops(dev);
 	struct sg_table *sgt;
 
-	if (WARN_ON_ONCE(attrs & ~DMA_ATTR_ALLOC_SINGLE_PAGES))
+	if (WARN_ON_ONCE((attrs & ~DMA_ATTR_ALLOC_SINGLE_PAGES) && (attrs & ~(DMA_ATTR_ALLOC_SINGLE_PAGES | DMA_ATTR_NO_KERNEL_MAPPING))))
 		return NULL;
 	if (WARN_ON_ONCE(gfp & __GFP_COMP))
 		return NULL;
